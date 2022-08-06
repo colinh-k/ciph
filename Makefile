@@ -2,8 +2,8 @@
 CXX=g++
 CC=gcc
 
-CXXFLAGS=-Wall -g -std=c++11
-CCFLAGS=-Wall -g -std=c99
+CXXFLAGS=-Wall -Werror -g -std=c++11
+CCFLAGS=-Wall -Werror -g -std=c99
 
 RM=rm
 RMFLAGS=-rf
@@ -67,6 +67,8 @@ TEST_BIN_DIR=$(TEST_BUILD_DIR)/bin
 
 TEST_SRCS=$(TEST_DIR)/main.cpp
 TEST_OBJS=$(TEST_OBJ_DIR)/main.o
+# dependencies for the test target
+TEST_DEPS=$(INCL_DIR)/crypt.h $(INCL_DIR)/bigint.h
 
 TEST_TARGET=$(TEST_BIN_DIR)/main
 
@@ -74,10 +76,12 @@ test: $(TEST_TARGET)
 
 $(TEST_TARGET): $(TEST_OBJS) | $(TEST_BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
-$(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp $(CRYPT_H) | $(TEST_OBJ_DIR)
+$(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp $(TEST_DEPS) | $(TEST_OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 run-test:
 	@./$(TEST_TARGET)
+debug-test:
+	@lldb ./$(TEST_TARGET)
 
 # MISC
 clean:
