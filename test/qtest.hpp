@@ -58,6 +58,34 @@ do {                                                         \
     );                                                       \
 } while (false)
 
+// expected and actual must be a numeric type (e.g., int, double, etc).
+// NOTE: displays chars as numbers in the error message
+#define QTEST_EXPECT_EQUALS(expected, actual)  \
+do {                                           \
+    if ((expected) == (actual)) break;         \
+    throw qtest::QTestException(               \
+        #actual,                               \
+        "Expected: " +                         \
+        std::to_string((expected)) +           \
+        "\n        Actual:   " +               \
+        std::to_string((actual)),              \
+        __FILE__, __LINE__                     \
+    );                                         \
+} while (false)
+
+#define QTEST_EXPECT_NOT_EQUALS(notExpected, actual)  \
+do {                                                  \
+    if ((notExpected) != (actual)) break;             \
+    throw qtest::QTestException(                      \
+        #actual,                                      \
+        "Not expected: " +                            \
+        std::to_string((notExpected)) +               \
+        "\n        Actual:       " +                  \
+        std::to_string((actual)),                     \
+        __FILE__, __LINE__                            \
+    );                                                \
+} while (false)
+
 namespace qtest {
     class QTestException : public std::exception {
         public:
@@ -65,7 +93,7 @@ namespace qtest {
                            const std::string& _text,
                            const std::string& _file,
                            const std::size_t& _lineNumber) {
-                msg = RED("FAILED: ") + _file + ":" +
+                msg = "    " RED("FAILED: ") + _file + ":" +
                       std::to_string(_lineNumber) +
                       ": " + _msg + "\n        " + _text + "\n";
             }
@@ -127,10 +155,10 @@ namespace qtest {
         std::uint32_t nPass = 0, nTotal = 0;
         std::vector<QTestBase*> failedTests;
         for (auto& test : qtests) {
-            std::cout << YELLOW("RUNNING ") + test->getName() + "\n    ";
+            std::cout << YELLOW("RUNNING ") + test->getName() + "\n";
             try {
                 test->runTest();
-                std::cout << GREEN("PASSED\n");
+                std::cout << GREEN("    PASSED\n");
                 nPass++;
             } catch (QTestException& e) {
                 // test failed
@@ -138,7 +166,7 @@ namespace qtest {
                 failedTests.push_back(test);
             } catch (std::exception& e) {
                 // uncaught exception, test marked as failed
-                std::cerr << RED("FAILED:") \
+                std::cerr << RED("    FAILED:") \
                           " unexpected exception while running test:\n        "
                             << e.what() << "\n";
                 failedTests.push_back(test);
