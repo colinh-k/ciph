@@ -67,8 +67,8 @@ TEST_BIN_DIR=$(TEST_BUILD_DIR)/bin
 
 TEST_SRCS=$(TEST_DIR)/main.cpp
 TEST_OBJS=$(TEST_OBJ_DIR)/main.o
-# dependencies for the test target
-TEST_DEPS=$(INCL_DIR)/crypt.h $(INCL_DIR)/bigint.h
+# dependencies for the test target (all test files in the test folder)
+TEST_DEPS=$(INCL_DIR)/crypt.h $(INCL_DIR)/bigint.h $(wildcard $(TEST_DIR)/*.hpp)
 
 TEST_TARGET=$(TEST_BIN_DIR)/main
 
@@ -82,6 +82,8 @@ run-test:
 	@./$(TEST_TARGET)
 debug-test:
 	@lldb ./$(TEST_TARGET)
+leaks-test:
+	@leaks --atExit -- ./$(TEST_TARGET)
 
 # MISC
 clean:
