@@ -368,40 +368,15 @@ void AES_Decipher(byte input[], byte key[], byte output[]) {
 
 
     for (size_t i = Nr - 1; i != 0; i--) {
-        printf("i: %zu\n", i);
-        printf("start:        ");
-        PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
-
         AES_InvShiftRows(state);
-
-        printf("after ishift: ");
-        PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
-
         AES_InvSubBytes(state, STATE_NROWS * STATE_NCOLS);
-
-        printf("after isub:   ");
-        PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
-
-        printf("key i:        ");
-        PrintBytesNL(&(schedule[STATE_NROWS * STATE_NCOLS * (i)]), STATE_NROWS * STATE_NCOLS);
-
         AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * i]));
-
-        printf("after addk:   ");
-        PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
-
         AES_InvMixColumns(state);
-
-        printf("after imix:   ");
-        PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
     }
 
     AES_InvShiftRows(state);
     AES_InvSubBytes(state, STATE_NROWS * STATE_NCOLS);
     AES_AddRoundKey(state, schedule);
-
-        printf("after fadd:   ");
-    PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
 
     // copy state to output
     memcpy(output, state, STATE_NROWS * STATE_NCOLS);
