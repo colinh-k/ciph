@@ -32,7 +32,7 @@ CC_SRCS=$(SRC_DIR)/main.c
 CC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(CC_OBJ_DIR)/%.o, $(CC_SRCS))
 
 CXX_H=
-CRYPT_H=$(INCL_DIR)/crypt.h
+CRYPT_H=$(INCL_DIR)/crypt.h $(wildcard $(INCL_DIR)/*.h)
 
 # targets
 CXX_TARGET=$(CXX_BIN_DIR)/main
@@ -68,7 +68,7 @@ TEST_BIN_DIR=$(TEST_BUILD_DIR)/bin
 TEST_SRCS=$(TEST_DIR)/main.cpp
 TEST_OBJS=$(TEST_OBJ_DIR)/main.o
 # dependencies for the test target (all test files in the test folder)
-TEST_DEPS=$(INCL_DIR)/crypt.h $(INCL_DIR)/bigint.h $(wildcard $(TEST_DIR)/*.hpp)
+TEST_DEPS=$(INCL_DIR)/crypt.h $(INCL_DIR)/bigint.h $(wildcard $(TEST_DIR)/*.hpp) $(wildcard $(INCL_DIR)/*.hpp)
 
 TEST_TARGET=$(TEST_BIN_DIR)/main
 
