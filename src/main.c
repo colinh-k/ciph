@@ -1,34 +1,206 @@
 #include <stdio.h>
 
-#include "../include/bigint.h"
+// #include "../include/bigint.h"
+#define Nk 4
+#include "../include/aes2.h"
 
 int main(int argc, char const *argv[]) {
-    BigInt* bigint = BigInt_FromString("999999999999999999999999999999999999");
-    BigInt* bigint2 = BigInt_FromString("999999999999999999999999999999999999");
-    BigInt* sum = BigInt_Init(0);
-    BigInt_Add(bigint, bigint2, sum);
+    // ENCIPHER TEST
+    byte plaintext[] = {
+        0x00, 0x11, 0x22, 0x33,
+        0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb,
+        0xcc, 0xdd, 0xee, 0xff
+    };
+    // PrintBytesNL(plaintext, STATE_NROWS * STATE_NCOLS);
+    // AES_MixColumns(plaintext);
+    // PrintBytesNL(plaintext, STATE_NROWS * STATE_NCOLS);
+    // AES_InvMixColumns(plaintext);
+    // PrintBytesNL(plaintext, STATE_NROWS * STATE_NCOLS);
+    // 128-bit key:
+    byte key[] = {
+        0x00, 0x01, 0x02, 0x03,
+        0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b,
+        0x0c, 0x0d, 0x0e, 0x0f
+    };
+    // 192-bit key:
+    // byte key[] = {
+    //     0x00, 0x01, 0x02, 0x03,
+    //     0x04, 0x05, 0x06, 0x07,
+    //     0x08, 0x09, 0x0a, 0x0b,
+    //     0x0c, 0x0d, 0x0e, 0x0f,
+    //     0x10, 0x11, 0x12, 0x13,
+    //     0x14, 0x15, 0x16, 0x17
+    // };
+    // 192-bit key:
+    // byte key[] = {
+    //     0x00, 0x01, 0x02, 0x03,
+    //     0x04, 0x05, 0x06, 0x07,
+    //     0x08, 0x09, 0x0a, 0x0b,
+    //     0x0c, 0x0d, 0x0e, 0x0f,
+    //     0x10, 0x11, 0x12, 0x13,
+    //     0x14, 0x15, 0x16, 0x17,
+    //     0x18, 0x19, 0x1a, 0x1b,
+    //     0x1c, 0x1d, 0x1e, 0x1f
+    // };
+    byte ciphertext[STATE_NROWS * STATE_NCOLS];
+    // decrypted plaintext
+    byte decryptedPt[STATE_NROWS * STATE_NCOLS];
 
-    char* str = BigInt_ToString(sum);
-    int res = strcmp(str, "1999999999999999999999999999999999998");
-    printf("str: %s\n", str);
-    printf("res: %d\n", res);
+    AES_Encipher(plaintext, key, ciphertext);
 
-    free(str);
-    BigInt_Free(bigint);
-    BigInt_Free(bigint2);
-    BigInt_Free(sum);
-    // BigInt* bigint = BigInt_FromString("12863437456928734652983746517826345178263417263451872634517623");
-    // BigInt* bigint2 = BigInt_FromString("12863437456928734652983746517826345178263417263451872634517623");
-    // BigInt* sum = BigInt_Init(0);
-    // BigInt_Add(bigint, bigint2, sum);
+    printf("plaintext:      ");
+    PrintBytesNL(plaintext, STATE_NROWS * STATE_NCOLS);
+    printf("ciphertext:     ");
+    PrintBytesNL(ciphertext, STATE_NROWS * STATE_NCOLS);
 
-    // char* str = BigInt_ToString(sum);
-    // int res = strcmp(str, "25726874913857469305967493035652690356526834526903745269035246");
-    // printf("str: %s\n", str);
-    // printf("res: %d\n", res);
+    AES_Decipher(ciphertext, key, decryptedPt);
 
-    // free(str);
-    // BigInt_Free(bigint);
-    // BigInt_Free(bigint2);
+    printf("decrypted text: ");
+    PrintBytesNL(decryptedPt, STATE_NROWS * STATE_NCOLS);
+
     return 0;
+    // byte input[] = {
+    //     0x00, 0x01, 0x02, 0x03,
+    //     0x04, 0x05, 0x06, 0x07,
+    //     0x08, 0x09, 0x10, 0x11,
+    //     0x12, 0x13, 0x14, 0x15
+    // };
+
+    // for (size_t r = 0; r < STATE_NROWS; r++) {
+    //     for (size_t c = 0; c < STATE_NCOLS; c++) {
+    //         printf("%02x ", SLOC(input, r, c));
+    //     }
+    //     printf("\n");
+    // }
+    // printf("\n");
+    // AES_InvShiftRows(input);
+
+    // for (size_t r = 0; r < STATE_NROWS; r++) {
+    //     for (size_t c = 0; c < STATE_NCOLS; c++) {
+    //         printf("%02x ", SLOC(input, r, c));
+    //     }
+    //     printf("\n");
+    // }
+
+    // PrintBytesNL(input, STATE_NROWS * STATE_NCOLS);
+    // return 0;
 }
+
+// TEST FOR ROTBYTES
+
+// byte bytes[] = {1, 2};
+// size_t nBytes = 2;
+// for (size_t i = 0; i < nBytes; i++) {
+//     printf("%d ", bytes[i]);
+// }
+// printf("\n");
+// AES_RotBytes(bytes, nBytes);
+// for (size_t i = 0; i < nBytes; i++) {
+//     printf("%d ", bytes[i]);
+// }
+// printf("\n");
+
+// TEST FOR KEY SCHEDULE
+// 128-bit key:
+// byte key[16] = {
+//     0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+// };
+// 192-bit key:
+// byte key[24] = {
+//     0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52, 0xc8, 0x10, 0xf3, 0x2b,
+//     0x80, 0x90, 0x79, 0xe5, 0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b
+// };
+// 256-bit key:
+// byte key[32] = {
+//     0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+//     0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
+// };
+// byte schedule[4 * Nb * (Nr + 1)];
+// AES_GenerateKeySchedule(key, schedule);
+
+// TEST FOR SHIFT ROWS:
+// byte state[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15};
+// for (size_t i = 0; i < 16; i++) {
+//     printf("%hhu ", state[i]);
+// }
+// printf("\n");
+// AES_ShiftRows(state);
+// for (size_t i = 0; i < 16; i++) {
+//     printf("%hhu ", state[i]);
+// }
+// printf("\n");
+// return 0;
+
+// MIX COLUMNS TEST
+
+// byte state[STATE_NCOLS * STATE_NROWS] = {
+//     0xd4, 0x69, 0x69, 0x69,
+//     0xbf, 0x69, 0x69, 0x69,
+//     0x5d, 0x69, 0x69, 0x69,
+//     0x30, 0x69, 0x69, 0x69
+// };
+
+// for (size_t r = 0; r < STATE_NROWS; r++) {
+//     for (size_t c = 0; c < STATE_NCOLS; c++) {
+//         printf("%02x ", SLOC(state, r, c));
+//     }
+//     printf("\n");
+// }
+// printf("\n");
+
+// AES_MixColumns(state);
+
+// for (size_t r = 0; r < STATE_NROWS; r++) {
+//     for (size_t c = 0; c < STATE_NCOLS; c++) {
+//         printf("%02x ", SLOC(state, r, c));
+//     }
+//     printf("\n");
+// }
+// printf("\n");
+
+// return 0;
+
+// ENCIPHER TEST
+// byte plaintext[] = {
+//     0x00, 0x11, 0x22, 0x33,
+//     0x44, 0x55, 0x66, 0x77,
+//     0x88, 0x99, 0xaa, 0xbb,
+//     0xcc, 0xdd, 0xee, 0xff
+// };
+// 128-bit key:
+// byte key[] = {
+//     0x00, 0x01, 0x02, 0x03,
+//     0x04, 0x05, 0x06, 0x07,
+//     0x08, 0x09, 0x0a, 0x0b,
+//     0x0c, 0x0d, 0x0e, 0x0f
+// };
+// 192-bit key:
+// byte key[] = {
+//     0x00, 0x01, 0x02, 0x03,
+//     0x04, 0x05, 0x06, 0x07,
+//     0x08, 0x09, 0x0a, 0x0b,
+//     0x0c, 0x0d, 0x0e, 0x0f,
+//     0x10, 0x11, 0x12, 0x13,
+//     0x14, 0x15, 0x16, 0x17
+// };
+// 192-bit key:
+// byte key[] = {
+//     0x00, 0x01, 0x02, 0x03,
+//     0x04, 0x05, 0x06, 0x07,
+//     0x08, 0x09, 0x0a, 0x0b,
+//     0x0c, 0x0d, 0x0e, 0x0f,
+//     0x10, 0x11, 0x12, 0x13,
+//     0x14, 0x15, 0x16, 0x17,
+//     0x18, 0x19, 0x1a, 0x1b,
+//     0x1c, 0x1d, 0x1e, 0x1f
+// };
+// byte output[STATE_NROWS * STATE_NCOLS];
+
+// AES_Encipher(plaintext, key, output);
+
+// PrintBytesNL(plaintext, STATE_NROWS * STATE_NCOLS);
+// PrintBytesNL(output, STATE_NROWS * STATE_NCOLS);
+
+// return 0;
