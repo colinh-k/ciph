@@ -5,17 +5,22 @@
 #include <stdlib.h>
 #include <memory.h>  // bzero
 
+#include <stdio.h>
+
+#include "common.h"
+
 // number of 32 bit words in the state == 16 bytes
 #define Nb 4
 // number of 32 bit words in the key: one of 4, 6, 8 == 16, 24, 32 bytes
-#ifndef Nk
-#define Nk 4
-#endif
+// #ifndef Nk
+// #define Nk 4
+// #endif
 // number of rounds (func of Nk and Nb (Nb is fixed)): one of 10, 12, 14
-#define Nr (Nk + 6)
+#define GET_Nr(x) (x + 6)
 
 #define STATE_NROWS 4
 #define STATE_NCOLS Nb
+#define STATE_SIZE (STATE_NROWS * STATE_NCOLS)
 
 // irriducible polynomial in GF(2^8)
 #define IPOLY 0X1b
@@ -38,7 +43,7 @@
 // #define MULT_BY_13(b) (MULT_BY_2(MULT_BY_2(MULT_BY_2(b) ^ b)) ^ b)
 // #define MULT_BY_14(b) (MULT_BY_2(MULT_BY_2(MULT_BY_2(b) ^ b) ^ b))
 
-typedef uint8_t byte;
+// typedef uint8_t byte;
 
 static const byte sbox[256] = {
     //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
@@ -158,7 +163,7 @@ static const byte mBy14[] = {
     0xd7,0xd9,0xcb,0xc5,0xef,0xe1,0xf3,0xfd,0xa7,0xa9,0xbb,0xb5,0x9f,0x91,0x83,0x8d
 };
 
-void AES_GenerateKeySchedule(byte key[], byte schedule[]);
+void AES_GenerateKeySchedule(byte key[], size_t Nk, byte schedule[]);
 void AES_SubBytes(byte bytes[], size_t nBytes);
 void AES_InvSubBytes(byte bytes[], size_t nBytes);
 void AES_RotBytes(byte bytes[], size_t nBytes);
@@ -169,12 +174,12 @@ void AES_XORBytes(byte bytesA[], byte bytesB[], size_t nBytes);
 void AES_Rcon_i(size_t i, byte result[]);
 
 // main algorithm functions
-void AES_Encipher(byte input[], byte key[], byte output[]);
+void AES_Encipher(byte input[], byte key[], size_t Nk, byte output[]);
 void AES_ShiftRows(byte state[]);
 void AES_MixColumns(byte state[]);
 void AES_AddRoundKey(byte state[], byte roundKey[]);
 
-void AES_Decipher(byte input[], byte key[], byte output[]);
+void AES_Decipher(byte input[], byte key[], size_t Nk, byte output[]);
 void AES_InvShiftRows(byte state[]);
 void AES_InvMixColumns(byte state[]);
 
@@ -193,7 +198,7 @@ void PrintBytesNL(byte bytes[], size_t nBytes) {
     printf("\n");
 }
 
-void AES_GenerateKeySchedule(byte key[], byte schedule[]) {
+void AES_GenerateKeySchedule(byte key[], size_t Nk, byte schedule[]) {
     // generates Nb(Nr + 1) words == Nb(Nr + 1) * 4 bytes
     // each of the Nr rounds requires Nb words of key data,
     // plus an initial Nb words
@@ -203,7 +208,7 @@ void AES_GenerateKeySchedule(byte key[], byte schedule[]) {
         schedule[i] = key[i];
     }
 
-    for (size_t i = 4 * Nk; i < 4 * Nb * (Nr + 1); i += 4) {
+    for (size_t i = 4 * Nk; i < 4 * Nb * (GET_Nr(Nk) + 1); i += 4) {
         // store the last word (as an array of 4 bytes)
         byte temp[4] = {schedule[i - 4], schedule[i - 3], schedule[i - 2], schedule[i - 1]};
 
@@ -262,32 +267,26 @@ void AES_Rcon_i(size_t i, byte result[]) {
     bzero(result + 1, 3);
 }
 
-void AES_Encipher(byte input[], byte key[], byte output[]) {
-    byte state[STATE_NROWS * STATE_NCOLS];
+void AES_Encipher(byte input[], byte key[], size_t Nk, byte output[]) {
+    byte state[STATE_SIZE];
     // copy input into the state
-    memcpy(state, input, STATE_NROWS * STATE_NCOLS);
+    memcpy(state, input, STATE_SIZE);
 
     // create key schedule
-    byte schedule[4 * Nb * (Nr + 1)];
-    AES_GenerateKeySchedule(key, schedule);
+    byte schedule[4 * Nb * (GET_Nr(Nk) + 1)];
+    AES_GenerateKeySchedule(key, Nk, schedule);
 
     AES_AddRoundKey(state, schedule);
 
-    for (size_t i = 1; i < Nr; i++) {
-        // printf("start:     ");
-        // PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
+    for (size_t i = 1; i < GET_Nr(Nk); i++) {
         AES_SubBytes(state, STATE_NROWS * STATE_NCOLS);
-        // printf("after sub: ");
-        // PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
         AES_ShiftRows(state);
-        // printf("after shf: ");
-        // PrintBytesNL(state, STATE_NROWS * STATE_NCOLS);
         AES_MixColumns(state);
         AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * i]));
     }
     AES_SubBytes(state, STATE_NROWS * STATE_NCOLS);
     AES_ShiftRows(state);
-    AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * Nr]));
+    AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * GET_Nr(Nk)]));
 
     // copy state to output
     memcpy(output, state, STATE_NROWS * STATE_NCOLS);
@@ -355,19 +354,19 @@ void AES_AddRoundKey(byte state[], byte roundKey[]) {
 
 // inverse functions
 
-void AES_Decipher(byte input[], byte key[], byte output[]) {
+void AES_Decipher(byte input[], byte key[], size_t Nk, byte output[]) {
     byte state[STATE_NROWS * STATE_NCOLS];
     // copy input into the state
     memcpy(state, input, STATE_NROWS * STATE_NCOLS);
 
     // create key schedule
-    byte schedule[4 * Nb * (Nr + 1)];
-    AES_GenerateKeySchedule(key, schedule);
+    byte schedule[4 * Nb * (GET_Nr(Nk) + 1)];
+    AES_GenerateKeySchedule(key, Nk, schedule);
 
-    AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * Nr]));
+    AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * GET_Nr(Nk)]));
 
 
-    for (size_t i = Nr - 1; i != 0; i--) {
+    for (size_t i = GET_Nr(Nk) - 1; i != 0; i--) {
         AES_InvShiftRows(state);
         AES_InvSubBytes(state, STATE_NROWS * STATE_NCOLS);
         AES_AddRoundKey(state, &(schedule[STATE_NROWS * STATE_NCOLS * i]));
