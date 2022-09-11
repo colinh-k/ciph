@@ -24,6 +24,10 @@ Optional arguments:
         -r, --range     range for operation {first-byte last-byte}
 ```
 
+## Testing
+- The core cryptographic operations are found in `include/aes.h`. These functions implement the AES block cipher. Tests for these functions can be found in `test/test_aes.hpp`.
+- The tests are copied from the Example Vectors section in Appendix C of [the AES specification](https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf). They check the output of the encipher and decipher operations with a piece of plaintext and every required size of key, i.e., 128, 192, and 256 bit keys.
+
 ## Examples
 - Generate a 128-bit key file:
   - `ciph keygen -k key128 -s 128`
