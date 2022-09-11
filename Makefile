@@ -25,8 +25,8 @@ CC_OBJ_DIR=$(CC_BUILD_DIR)/obj
 CC_BIN_DIR=$(CC_BUILD_DIR)/bin
 
 # files for main crypt
-# CXX_SRCS=$(SRC_DIR)/main.cpp
-# CXX_OBJS=$(patsubst $(SRC_DIR)/%.cpp, $(CXX_OBJ_DIR)/%.o, $(CXX_SRCS))
+CXX_SRCS=$(SRC_DIR)/ciph.cpp
+CXX_OBJS=$(patsubst $(SRC_DIR)/%.cpp, $(CXX_OBJ_DIR)/%.o, $(CXX_SRCS))
 
 CC_SRCS=$(SRC_DIR)/main.c
 CC_OBJS=$(patsubst $(SRC_DIR)/%.c, $(CC_OBJ_DIR)/%.o, $(CC_SRCS))
@@ -35,24 +35,27 @@ CXX_H=
 CRYPT_H=$(INCL_DIR)/crypt.h $(wildcard $(INCL_DIR)/*.h)
 
 # targets
-CXX_TARGET=$(CXX_BIN_DIR)/main
+CXX_TARGET=$(CXX_BIN_DIR)/ciph
 CC_TARGET=$(CC_BIN_DIR)/main
 
 all: $(CC_TARGET)
 
+ciph: $(CXX_TARGET)
 # COMPILE CXX
-# $(CXX_TARGET): $(CXX_OBJS) | $(CXX_BIN_DIR)
-# 	$(CXX) $(CXXFLAGS) -o $@ $^
-# $(CXX_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(CXX_H) | $(CXX_OBJ_DIR)
-# 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+$(CXX_TARGET): $(CXX_OBJS) | $(CXX_BIN_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+$(CXX_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(CXX_H) | $(CXX_OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
+run-ciph:
+	@./$(CXX_TARGET)
 
+# CC TARGETS
 # COMPILE CC
 $(CC_TARGET): $(CC_OBJS) | $(CC_BIN_DIR)
 	$(CC) $(CCFLAGS) -o $@ $^
 $(CC_OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(CRYPT_H) | $(CC_OBJ_DIR)
 	$(CC) $(CCFLAGS) -o $@ -c $<
 
-# CC TARGETS
 run:
 	@./$(CC_TARGET)
 leaks:
@@ -94,4 +97,4 @@ clean:
 $(BUILD_DIR) $(CXX_BUILD_DIR) $(CXX_OBJ_DIR) $(CXX_BIN_DIR) $(CC_BUILD_DIR) $(CC_OBJ_DIR) $(CC_BIN_DIR) $(TEST_BUILD_DIR) $(TEST_OBJ_DIR) $(TEST_BIN_DIR) $(INCL_DIR):
 	@mkdir -p $@
 
-.PHONY: clean all run leaks debug run-test leaks-test debug-test
+.PHONY: clean all run leaks debug run-test leaks-test debug-test ciph run-ciph
