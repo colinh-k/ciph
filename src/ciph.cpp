@@ -2,7 +2,7 @@
 #include "clap.hpp"
 
 extern "C" {
-    #include "../include/crypt.h"
+    #include "../include/ciph.h"
 }
 
 // for windows compatability for access()
@@ -19,20 +19,12 @@ extern "C" {
 int main(int argc, char const *argv[]) {
     clap::ArgumentParser parser;
 
-    parser.addArg({"operation"}, "specify the type of operation to perform {encipher or decipher}", clap::Type<std::string>({"encipher", "decipher"}));
-    parser.addArg({"input-file", "-i"}, "the input filename (must exist)", clap::Type<std::string>());
-    parser.addArg({"output-file", "-o"}, "the output filename (overwritten if already exists)", clap::Type<std::string>());
-    parser.addArg({"--key-file", "-k"}, "the key file (must exist)", clap::Type<std::string>());
+    parser.addArg({"operation"}, "specify the type of operation to perform {encipher, decipher, or keygen}", clap::Type<std::string>({"encipher", "decipher", "keygen"}));
+    parser.addArg({"--input-file", "-i"}, "the input filename required for enciphering or deciphering (must exist)", clap::Type<std::string>());
+    parser.addArg({"--output-file", "-o"}, "the output filename required for enciphering or deciphering (overwritten if already exists)", clap::Type<std::string>());
+    parser.addArg({"--key-file", "-k"}, "the key filename", clap::Type<std::string>());
+    parser.addArg({"--key-size", "-s"}, "the key size in bits (must be compliant with AES) {128, 192, 256}", clap::Type<std::size_t>({128, 192, 256}));
     parser.addArg({"--range", "-r"}, "range for operation {first-byte last-byte}", clap::Type<std::vector<std::size_t>>(), 2);
-
-    // std::size_t argc = 11;
-    // char const *argv[] = {
-    //     "./utility", "decipher",
-    //     "-i", "./src/cipher.txt",
-    //     "-o", "./src/decipher.txt",
-    //     "-k", "./src/key.txt",
-    //     "-r", "1", "59"
-    // };
 
     clap::ArgumentMap map;
     try {
@@ -49,22 +41,34 @@ int main(int argc, char const *argv[]) {
     }
 
     std::string op = map.get<std::string>("operation");
+
+    if (op == "keygen") {
+        if (map.hasValue("key-file") && map.hasValue("key-size")) {
+            // key-size / 8 because we want to convert from bits to bytes
+            Crypt_GenerateKeyFile((map.get<std::string>("key-file") + ".ciphkey").c_str(), map.get<std::size_t>("key-size") / 8);
+            return EXIT_SUCCESS;
+        } else {
+            std::cerr << clap::ParseException("keygen operation requires key-file and key-size.").what() << '\n';
+            std::cerr << parser.getUsage() << '\n';
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (!map.hasValue("input-file") || !map.hasValue("output-file") || !map.hasValue("key-file")) {
+        std::cerr << clap::ParseException("encipher and decipher operations require input-file, output-file, and key-file.").what() << '\n';
+        std::cerr << parser.getUsage() << '\n';
+        return EXIT_FAILURE;
+    }
+
     std::string fnameIn = map.get<std::string>("input-file");
     std::string fnameOut = map.get<std::string>("output-file");
 
     // handle key file
-    std::string fnameKey;
-    if (map.hasValue("key-file")) {
-        fnameKey = map.get<std::string>("key-file");
-        if (access(fnameKey.c_str(), F_OK) != 0) {
-            // keyfile doesnt exist
-            Crypt_GenerateKeyFile(fnameKey.c_str(), KEY_LEN);
-        }
-    } else {
-        // no key file specified, so generate a new one using the name of the input file + .ciphkey
-        // TODO: what happens when input doesnt contain a '.' extension ?
-        fnameKey = fnameIn.substr(0, fnameIn.find_last_of('.') + 1) + ".ciphkey";
-        Crypt_GenerateKeyFile(fnameKey.c_str(), KEY_LEN);
+    std::string fnameKey = map.get<std::string>("key-file");
+    if (access(fnameKey.c_str(), F_OK) != 0) {
+        std::cerr << clap::ParseException("key-file does not exist or is inaccessible.").what() << '\n';
+        std::cerr << parser.getUsage() << '\n';
+        return EXIT_FAILURE;
     }
 
     // handle range
@@ -79,9 +83,12 @@ int main(int argc, char const *argv[]) {
     if (op == "encipher") {
         Crypt_EncipherRange(fnameIn.c_str(), fnameKey.c_str(), fnameOut.c_str(), rangeStart, rangeEnd);
     } else {
-        std::cout << fnameIn.c_str() << '\n' << fnameKey.c_str() << '\n' << fnameOut.c_str() << '\n' << rangeStart << '\n' << rangeEnd << '\n';
-        std::cout << CRYPT_CALC_ENDPT(rangeStart, rangeEnd) << '\n';
-        Crypt_DecipherRange(fnameIn.c_str(), fnameKey.c_str(), fnameOut.c_str(), rangeStart, CRYPT_CALC_ENDPT(rangeStart, rangeEnd));
+        if (rangeEnd != CRYPT_EOF) {
+            // special case; if rangeEnd == CRYPT_EOF, CRYPT_CALC_ENDPT does not correctly calculate
+            // the endpoint, so just pass CRYPT_EOF if this is the case
+            rangeEnd = CRYPT_CALC_ENDPT(rangeStart, rangeEnd);
+        }
+        Crypt_DecipherRange(fnameIn.c_str(), fnameKey.c_str(), fnameOut.c_str(), rangeStart, rangeEnd);
     }
 
     return EXIT_SUCCESS;
