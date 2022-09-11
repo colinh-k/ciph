@@ -18,6 +18,7 @@
 // #endif
 // number of rounds (func of Nk and Nb (Nb is fixed)): one of 10, 12, 14
 #define GET_Nr(x) (x + 6)
+#define NK_BYTES_TO_WORDS(x) (x / 4)
 
 #define STATE_NROWS 4
 #define STATE_NCOLS Nb
