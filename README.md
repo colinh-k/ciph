@@ -41,10 +41,10 @@ Optional arguments:
   - `ciph decipher -i enciphered_file.txt -o deciphered_file.txt -k key128.ciphkey`
 
 - Encipher `file.txt` from byte 15 to byte 42 using the 128-bit key generated above:
-  - `ciph encipher -i file.txt -o enciphered_file.txt -k key128.ciphkey`
+  - `ciph encipher -i file.txt -o enciphered_file.txt -k key128.ciphkey -r 15 42`
 
 - Decipher `enciphered_file.txt` from byte 15 to byte 42 of the original file using the 128-bit key generated above, and store the deciphered text in `deciphered_file.txt`:
-  - `ciph decipher -i enciphered_file.txt -o deciphered_file.txt -k key128.ciphkey`
+  - `ciph decipher -i enciphered_file.txt -o deciphered_file.txt -k key128.ciphkey -r 15 42`
 
 ## Limitations
 - It may not be possible to specify subranges in very large files, since the byte ranges must fit in `size_t` variables.
